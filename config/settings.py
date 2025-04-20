@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'trade',
     'freshman',
     'event',
+    'blog',
 ]
 
 MIDDLEWARE = [

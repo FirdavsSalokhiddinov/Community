@@ -30,6 +30,7 @@ urlpatterns = [
     path('trade/', include('trade.urls')),
     path('visits/', include('freshman.urls')),
     path('event/', include('event.urls')),
+    path('post/', include('blog.urls')),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
