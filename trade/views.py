@@ -1,11 +1,64 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Product
-from .serializers import ProductSerializer
+from rest_framework import status
+from .models import Product, Cart, CartItem
+from .serializers import ProductSerializer, DetailedProductSerializer, CartSerializer, CartItemSerializer, SimpleCartSerializer
 
 @api_view(["GET"])
 def products(request):
     products = Product.objects.all()
     serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data)
+
+@api_view(["GET"])
+def product_detail(request, slug):
+    product = Product.objects.get(slug=slug)
+    serializer = DetailedProductSerializer(product)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def add_item(request):
+    """
+    Add an item to the cart or increase quantity if it already exists.
+    """
+    try:
+        product_id = request.data.get("product_id")
+        cart_code = request.data.get("cart_code")
+
+        cart, created = Cart.objects.get_or_create(cart_code=cart_code)
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product_id=product_id)
+
+        cart_item.quantity = 1
+        cart_item.save()
+
+        serializer = CartItemSerializer(cart_item)
+        return Response({"data": serializer.data, "message": "Item added to cart successfully"}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+def product_in_cart(request):
+    cart_code = request.query_param.get("cart_code")
+    product_id = request.query_param.get("product_id")
+
+    cart = Cart.objects.geT(cart_code=cart_code)
+    product = Product.objects.get(id=product_id)
+
+    product_exists_in_cart = CartItem.objects.filter(cart=cart, product=product).exists()
+
+    return Response({'product_in_cart': product_exists_in_cart})
+
+@api_view(['GET'])
+def get_cart_stat(request):
+    cart_code = request.query_params.get("cart_code")
+    cart = Cart.objects.get(cart_code=cart_code, paid=False)
+    serializer = SimpleCartSerializer(cart)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_cart(request):
+    cart_code = request.query_params.get("cart_code")
+    cart = Cart.objects.get(cart_code=cart_code, paid=False)
+    serializer = CartSerializer(cart)
     return Response(serializer.data)
